@@ -1,52 +1,300 @@
-<!DOCTYPE html>
-<html lang="ar">
+<!doctype html>
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام نقاط البيع - تخفيضات السعر الأنسب</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#172a46">
+    <title>نقطة البيع | تخفيضات السعر الأنسب</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="print.css" media="print">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🛒 نظام نقاط البيع</h1>
-            <p>نظام تخفيضات السعر الأنسب</p>
-        </header>
+    <header class="app-header">
+        <div class="brand-block">
+            <div class="brand-mark" aria-hidden="true">ت</div>
+            <div>
+                <h1>تخفيضات السعر الأنسب</h1>
+                <p>نظام نقطة البيع والفواتير</p>
+            </div>
+        </div>
+        <div id="sync-status" class="sync-status is-local" role="status">
+            <span class="status-dot"></span>
+            <span class="status-text">جارٍ الاتصال…</span>
+        </div>
+    </header>
 
-        <div class="main-content">
-            <div class="products-section">
-                <h2>المنتجات</h2>
-                <div id="products-container"></div>
+    <nav class="main-nav" aria-label="التنقل الرئيسي">
+        <button class="nav-btn active" data-view="sale-view">🧾 نقطة البيع</button>
+        <button class="nav-btn" data-view="history-view">📚 الفواتير</button>
+        <button class="nav-btn" data-view="report-view">📊 تقرير اليوم</button>
+    </nav>
+
+    <main class="page-shell">
+        <section id="sale-view" class="view active">
+            <div class="section-heading">
+                <div>
+                    <span class="eyebrow">فاتورة جديدة</span>
+                    <h2>تسجيل عملية بيع</h2>
+                </div>
+                <button id="new-invoice-btn" class="btn btn-light">＋ فاتورة جديدة</button>
             </div>
 
-            <div class="cart-section">
-                <h2>🛒 السلة</h2>
-                <div id="cart-items"></div>
-                <div id="cart-summary"></div>
-                <div class="action-buttons">
-                    <button class="action-btn complete-btn" onclick="completeTransaction()">
-                        ✅ إكمال العملية
-                    </button>
-                    <button class="action-btn clear-btn" onclick="clearCart()">
-                        🗑️ تفريغ السلة
-                    </button>
-                    <button class="action-btn history-btn" onclick="showInvoices()">
-                        📋 الفواتير السابقة
-                    </button>
+            <div class="layout-grid">
+                <div class="stack">
+                    <article class="card form-card">
+                        <h3>بيانات الفاتورة</h3>
+                        <div class="form-grid three">
+                            <label>
+                                <span>رقم الفاتورة</span>
+                                <input id="invoice-no" type="text" readonly>
+                            </label>
+                            <label>
+                                <span>تاريخ ووقت البيع</span>
+                                <input id="sale-date" type="datetime-local">
+                            </label>
+                            <label>
+                                <span>رقم طلب البيع <small>اختياري</small></span>
+                                <input id="order-no" type="text" inputmode="numeric" placeholder="مثال: 125">
+                            </label>
+                            <label class="span-two">
+                                <span>اسم الزبون *</span>
+                                <input id="customer-name" type="text" placeholder="اكتب اسم الزبون" autocomplete="off">
+                            </label>
+                            <label>
+                                <span>اسم العامل *</span>
+                                <select id="worker-name" required>
+                                    <option value="">اختر العامل</option>
+                                    <option>شكري</option>
+                                    <option>مهند</option>
+                                    <option>إبراهيم</option>
+                                    <option>صدام المجاهد</option>
+                                </select>
+                            </label>
+                        </div>
+                    </article>
+
+                    <article class="card item-card">
+                        <div class="card-title-row">
+                            <div>
+                                <h3>إضافة صنف</h3>
+                                <p>اكتب البيان أو استخدم أزرار الأسعار السريعة.</p>
+                            </div>
+                        </div>
+
+                        <div class="item-entry">
+                            <label class="item-name-field">
+                                <span>اسم الصنف</span>
+                                <input id="item-name" type="text" placeholder="مثال: فستان بناتي" autocomplete="off">
+                            </label>
+                            <label>
+                                <span>السعر</span>
+                                <input id="item-price" type="number" min="0" step="50" inputmode="numeric" placeholder="0">
+                            </label>
+                            <label>
+                                <span>الكمية</span>
+                                <input id="item-qty" type="number" min="1" step="1" inputmode="numeric" value="1">
+                            </label>
+                            <button id="add-item-btn" class="btn btn-primary add-item-btn">إضافة</button>
+                        </div>
+
+                        <div class="quick-heading">
+                            <strong>الأسعار السريعة</strong>
+                            <span>الضغط على السعر يضيفه مباشرة</span>
+                        </div>
+                        <div id="quick-prices" class="quick-prices"></div>
+                    </article>
+
+                    <article class="card cart-card">
+                        <div class="card-title-row">
+                            <h3>أصناف الفاتورة</h3>
+                            <span id="cart-count-badge" class="pill">0 صنف</span>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="data-table cart-table">
+                                <thead>
+                                    <tr>
+                                        <th>الصنف</th>
+                                        <th>الكمية</th>
+                                        <th>السعر</th>
+                                        <th>الإجمالي</th>
+                                        <th>إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cart-body"></tbody>
+                            </table>
+                        </div>
+                        <div id="cart-mobile" class="cart-mobile"></div>
+                    </article>
+                </div>
+
+                <aside class="stack summary-column">
+                    <article class="card summary-card">
+                        <h3>ملخص الفاتورة</h3>
+                        <div class="summary-line"><span>عدد الأصناف</span><strong id="summary-lines">0</strong></div>
+                        <div class="summary-line"><span>إجمالي القطع</span><strong id="summary-qty">0</strong></div>
+                        <div class="grand-total">
+                            <span>الإجمالي النهائي</span>
+                            <strong><b id="summary-total">0</b> ريال</strong>
+                        </div>
+                    </article>
+
+                    <article class="card payment-card">
+                        <h3>طريقة الدفع</h3>
+                        <label>
+                            <span>اختر طريقة الدفع *</span>
+                            <select id="payment-method">
+                                <option value="">اختر</option>
+                                <option value="نقدي">نقدي</option>
+                                <option value="حوالة">حوالة</option>
+                                <option value="تحويل إلكتروني">تحويل إلكتروني</option>
+                                <option value="شبكة/بطاقة">شبكة / بطاقة</option>
+                                <option value="آجل">آجل</option>
+                            </select>
+                        </label>
+
+                        <div id="transfer-fields" class="conditional-fields hidden">
+                            <label><span>رقم الحوالة *</span><input id="transfer-no" type="text" placeholder="رقم الحوالة"></label>
+                            <label><span>اسم المُحوِّل</span><input id="transfer-sender" type="text" placeholder="اسم المُحوِّل"></label>
+                            <label><span>جهة التحويل</span><input id="transfer-provider" type="text" placeholder="مثال: الكريمي"></label>
+                        </div>
+
+                        <div id="credit-fields" class="conditional-fields hidden">
+                            <label><span>المبلغ المدفوع</span><input id="paid-amount" type="number" min="0" inputmode="numeric" value="0"></label>
+                            <div class="remaining-box"><span>المتبقي</span><strong><b id="remaining-amount">0</b> ريال</strong></div>
+                        </div>
+                    </article>
+
+                    <article class="card actions-card">
+                        <button id="save-invoice-btn" class="btn btn-success">✓ حفظ الفاتورة</button>
+                        <button id="save-print-btn" class="btn btn-primary">🖨 حفظ وطباعة</button>
+                        <button id="clear-invoice-btn" class="btn btn-danger-ghost">تفريغ الفاتورة</button>
+                    </article>
+                </aside>
+            </div>
+        </section>
+
+        <section id="history-view" class="view">
+            <div class="section-heading">
+                <div><span class="eyebrow">الأرشيف</span><h2>الفواتير السابقة</h2></div>
+                <button id="refresh-invoices-btn" class="btn btn-light">↻ تحديث</button>
+            </div>
+
+            <article class="card filters-card">
+                <div class="form-grid filters-grid">
+                    <label class="search-field">
+                        <span>بحث</span>
+                        <input id="history-search" type="search" placeholder="فاتورة، زبون، عامل، حوالة أو صنف">
+                    </label>
+                    <label><span>من تاريخ</span><input id="history-from" type="date"></label>
+                    <label><span>إلى تاريخ</span><input id="history-to" type="date"></label>
+                    <label><span>الدفع</span>
+                        <select id="history-payment">
+                            <option value="">الكل</option>
+                            <option>نقدي</option><option>حوالة</option><option>تحويل إلكتروني</option><option>شبكة/بطاقة</option><option>آجل</option>
+                        </select>
+                    </label>
+                </div>
+            </article>
+
+            <div class="stats-grid history-stats">
+                <div class="stat-card"><span>عدد الفواتير</span><strong id="history-count">0</strong></div>
+                <div class="stat-card"><span>إجمالي المبيعات</span><strong><b id="history-total">0</b> ريال</strong></div>
+                <div class="stat-card"><span>إجمالي القطع</span><strong id="history-qty">0</strong></div>
+                <div class="stat-card"><span>المبالغ المتبقية</span><strong><b id="history-remaining">0</b> ريال</strong></div>
+            </div>
+
+            <article class="card history-card">
+                <div class="table-wrap">
+                    <table class="data-table history-table">
+                        <thead><tr><th>الفاتورة</th><th>الزبون</th><th>العامل</th><th>الإجمالي</th><th>الدفع</th><th>التاريخ</th><th>الإجراءات</th></tr></thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+                <div id="history-mobile" class="history-mobile"></div>
+                <div id="history-empty" class="empty-state hidden">لا توجد فواتير مطابقة.</div>
+            </article>
+        </section>
+
+        <section id="report-view" class="view">
+            <div class="section-heading">
+                <div><span class="eyebrow">الإقفال اليومي</span><h2>تقرير المبيعات ودمج الفواتير</h2></div>
+                <div class="report-actions">
+                    <button id="export-report-btn" class="btn btn-light">تنزيل CSV</button>
+                    <button id="print-report-btn" class="btn btn-primary">🖨 طباعة التقرير</button>
                 </div>
             </div>
+
+            <article class="card report-date-card">
+                <label><span>اختر يوم التقرير</span><input id="report-date" type="date"></label>
+            </article>
+
+            <div id="report-print-area">
+                <div class="report-print-header print-only">
+                    <h2>تخفيضات السعر الأنسب</h2>
+                    <p>تقرير المبيعات اليومي</p>
+                    <p id="report-print-date"></p>
+                </div>
+
+                <div class="stats-grid report-stats">
+                    <div class="stat-card accent"><span>إجمالي المبيعات</span><strong><b id="report-total">0</b> ريال</strong></div>
+                    <div class="stat-card"><span>عدد الفواتير</span><strong id="report-count">0</strong></div>
+                    <div class="stat-card"><span>عدد القطع</span><strong id="report-qty">0</strong></div>
+                    <div class="stat-card warning"><span>المتبقي الآجل</span><strong><b id="report-remaining">0</b> ريال</strong></div>
+                </div>
+
+                <div id="payment-breakdown" class="payment-breakdown"></div>
+
+                <article class="card report-card">
+                    <div class="card-title-row"><div><h3>دمج أصناف فواتير اليوم</h3><p>تجميع الأصناف المتشابهة بالسعر نفسه.</p></div></div>
+                    <div class="table-wrap">
+                        <table class="data-table"><thead><tr><th>الصنف</th><th>سعر الوحدة</th><th>الكمية المجمعة</th><th>الإجمالي</th></tr></thead><tbody id="merged-items-body"></tbody></table>
+                    </div>
+                </article>
+
+                <article class="card report-card">
+                    <h3>فواتير اليوم</h3>
+                    <div class="table-wrap">
+                        <table class="data-table"><thead><tr><th>الفاتورة</th><th>الزبون</th><th>العامل</th><th>الدفع</th><th>الإجمالي</th><th>الوقت</th></tr></thead><tbody id="report-invoices-body"></tbody></table>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </main>
+
+    <div id="invoice-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-panel">
+            <div class="modal-head no-print">
+                <h2 id="modal-title">تفاصيل الفاتورة</h2>
+                <button id="close-modal-btn" class="icon-btn" aria-label="إغلاق">×</button>
+            </div>
+            <div id="print-area" class="receipt"></div>
+            <div class="modal-actions no-print">
+                <button id="modal-print-btn" class="btn btn-primary">🖨 طباعة 80mm</button>
+                <button id="modal-close-btn" class="btn btn-light">إغلاق</button>
+            </div>
         </div>
     </div>
 
-    <div id="invoices-modal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close" onclick="closeInvoices()">&times;</span>
-            <h2>الفواتير المحفوظة</h2>
-            <div id="invoices-list"></div>
+    <div id="confirm-modal" class="modal hidden" role="dialog" aria-modal="true">
+        <div class="confirm-panel">
+            <div class="confirm-icon">!</div>
+            <h2 id="confirm-title">تأكيد</h2>
+            <p id="confirm-message"></p>
+            <div class="confirm-actions">
+                <button id="confirm-yes" class="btn btn-danger">تأكيد</button>
+                <button id="confirm-no" class="btn btn-light">إلغاء</button>
+            </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <footer class="app-footer no-print">
+        <strong>تخفيضات السعر الأنسب</strong>
+        <span>إب - شارع العدين الثالث، أسفل ملك الأزياء</span>
+        <a href="tel:739302339">للتواصل: 739302339</a>
+    </footer>
+
+    <script type="module" src="app.js"></script>
 </body>
 </html>
