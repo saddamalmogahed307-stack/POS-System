@@ -1,212 +1,292 @@
-/* ==================== Print Styles for 80mm Thermal Printer ====================  */
-
 @media print {
-    /* Reset and Base Styles */
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    html, body {
-        width: 80mm;
-        margin: 0;
-        padding: 0;
-        background: white;
-        color: black;
-    }
-
-    body {
-        font-family: 'Arial', 'Segoe UI', sans-serif;
-        direction: rtl;
-        text-align: right;
-        line-height: 1.4;
-    }
-
-    /* Hide all non-print elements */
-    .container,
-    header,
-    .main-content,
-    .products-section,
-    .cart-section,
-    .action-buttons,
-    #invoices-modal {
-        display: none !important;
-    }
-
-    /* Print Window Specific */
-    .receipt {
-        width: 80mm;
-        margin: 0;
-        padding: 5mm;
-        font-size: 11pt;
-        line-height: 1.5;
-    }
-
-    .receipt h2 {
-        font-size: 14pt;
-        font-weight: bold;
-        margin: 0 0 5mm 0;
-        text-align: center;
-    }
-
-    .header {
-        border-bottom: 2px dashed #000;
-        padding-bottom: 3mm;
-        margin-bottom: 5mm;
-        text-align: center;
-    }
-
-    .header p {
-        margin: 2mm 0;
-        font-size: 9pt;
-    }
-
-    .items {
-        border-bottom: 2px dashed #000;
-        padding: 5mm 0;
-        margin: 5mm 0;
-    }
-
-    .item-name {
-        font-weight: bold;
-        margin-top: 3mm;
-        font-size: 10pt;
-        text-align: right;
-        word-wrap: break-word;
-    }
-
-    .item-row {
-        display: flex;
-        justify-content: space-between;
-        font-size: 10pt;
-        padding: 1mm 0;
-        text-align: right;
-        margin-bottom: 2mm;
-    }
-
-    .item-row span {
-        flex: 1;
-    }
-
-    .item-row span:first-child {
-        text-align: left;
-    }
-
-    .item-row span:last-child {
-        text-align: center;
-    }
-
-    .totals {
-        border-top: 2px dashed #000;
-        padding-top: 3mm;
-        margin-top: 3mm;
-    }
-
-    .total-row {
-        display: flex;
-        justify-content: space-between;
-        font-weight: bold;
-        padding: 2mm 0;
-        font-size: 11pt;
-        margin-bottom: 2mm;
-    }
-
-    .total-row span:first-child {
-        text-align: left;
-    }
-
-    .total-row span:last-child {
-        text-align: right;
-    }
-
-    .savings-row {
-        color: #000;
-        font-weight: bold;
-    }
-
-    .footer {
-        margin-top: 5mm;
-        font-size: 9pt;
-        padding-top: 3mm;
-        border-top: 1px dashed #000;
-        text-align: center;
-    }
-
-    .footer p {
-        margin: 2mm 0;
-    }
-
-    /* Page Settings */
     @page {
         size: 80mm auto;
         margin: 0;
-        padding: 0;
     }
 
-    /* Prevent page breaks */
-    .receipt {
-        page-break-after: avoid;
-        page-break-inside: avoid;
-    }
-
-    /* Remove all backgrounds and colors for thermal printer */
-    body, html, .receipt {
-        background: white !important;
-        color: black !important;
-    }
-
-    /* Ensure text is black */
     * {
-        color: black !important;
-        background: transparent !important;
-    }
-
-    /* Override specific colors */
-    .savings-row {
-        color: black !important;
-    }
-
-    /* Remove box shadows */
-    * {
+        box-sizing: border-box !important;
         box-shadow: none !important;
         text-shadow: none !important;
     }
 
-    /* Optimize for thermal printer - no colors needed */
-    h1, h2, h3, h4, h5, h6 {
-        color: black !important;
-        font-weight: bold;
-    }
-
-    span, div, p {
-        color: black !important;
-    }
-
-    /* Ensure proper spacing for thermal receipt */
-    .receipt {
-        width: 80mm;
-        max-width: 80mm;
-    }
-
-    /* Remove margins that might cause issues */
+    html,
     body {
+        width: 80mm !important;
+        min-width: 80mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+        direction: rtl;
+        font-family: Arial, Tahoma, sans-serif !important;
+    }
+
+    body > * {
+        display: none !important;
+    }
+
+    body.print-invoice #invoice-modal {
+        position: static !important;
+        inset: auto !important;
+        display: block !important;
+        width: 80mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+    }
+
+    body.print-invoice #invoice-modal .modal-panel {
+        display: block !important;
+        width: 80mm !important;
+        max-width: 80mm !important;
+        max-height: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+    }
+
+    body.print-invoice #print-area {
+        display: block !important;
+        width: 80mm !important;
+        max-width: 80mm !important;
+        margin: 0 !important;
+        padding: 4mm !important;
+        border: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    body.print-invoice #print-area *,
+    body.print-report #report-print-area * {
+        color: #000 !important;
+        background: transparent !important;
+    }
+
+    .no-print,
+    .modal-head,
+    .modal-actions {
+        display: none !important;
+    }
+
+    .receipt-brand {
+        text-align: center !important;
+    }
+
+    .receipt-brand h2 {
+        margin: 0 0 2mm !important;
+        font-size: 15pt !important;
+        font-weight: 800 !important;
+    }
+
+    .receipt-brand p {
+        margin: 1mm 0 !important;
+        font-size: 8.5pt !important;
+    }
+
+    .receipt-title {
+        margin: 3mm 0 !important;
+        padding: 2mm 0 !important;
+        border-top: 1px dashed #000 !important;
+        border-bottom: 1px dashed #000 !important;
+        text-align: center !important;
+        font-size: 11pt !important;
+        font-weight: 800 !important;
+    }
+
+    .receipt-info {
+        display: grid !important;
+        gap: 1.2mm !important;
+        font-size: 8.5pt !important;
+    }
+
+    .receipt-table {
+        display: table !important;
+        width: 100% !important;
+        margin: 3mm 0 !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important;
+    }
+
+    .receipt-table thead {
+        display: table-header-group !important;
+    }
+
+    .receipt-table tbody {
+        display: table-row-group !important;
+    }
+
+    .receipt-table tr {
+        display: table-row !important;
+        break-inside: avoid !important;
+    }
+
+    .receipt-table th,
+    .receipt-table td {
+        display: table-cell !important;
+        padding: 1.5mm 0.5mm !important;
+        border-bottom: 1px dashed #777 !important;
+        text-align: center !important;
+        font-size: 7.6pt !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    .receipt-table th:first-child,
+    .receipt-table td:first-child {
+        width: 38% !important;
+        text-align: right !important;
+    }
+
+    .receipt-total {
+        display: flex !important;
+        justify-content: space-between !important;
+        gap: 3mm !important;
+        padding: 2.5mm 0 !important;
+        border-top: 2px solid #000 !important;
+        border-bottom: 2px solid #000 !important;
+        font-size: 12pt !important;
+        font-weight: 900 !important;
+    }
+
+    .receipt-payment {
+        display: grid !important;
+        gap: 1mm !important;
+        padding: 2mm 0 !important;
+        font-size: 8.5pt !important;
+    }
+
+    .receipt-qr {
+        display: grid !important;
+        place-items: center !important;
+        gap: 1mm !important;
+        margin-top: 2mm !important;
+        font-size: 7.5pt !important;
+    }
+
+    .receipt-qr img {
+        display: block !important;
+        width: 20mm !important;
+        height: 20mm !important;
+        filter: grayscale(1) contrast(1.5) !important;
+    }
+
+    .receipt-footer {
+        display: block !important;
+        margin-top: 2.5mm !important;
+        padding-top: 2mm !important;
+        border-top: 1px dashed #000 !important;
+        text-align: center !important;
+        font-size: 8pt !important;
+    }
+
+    body.print-report .page-shell {
+        display: block !important;
+        width: 80mm !important;
         margin: 0 !important;
         padding: 0 !important;
     }
 
-    /* Line breaks for readability */
-    hr {
-        border: none;
-        border-top: 2px dashed #000;
-        margin: 2mm 0;
+    body.print-report .page-shell > .view {
+        display: none !important;
     }
-}
 
-/* Non-Print Styles (Normal View) */
-@media screen {
-    /* Hidden on screen, visible only for print preview */
-    .print-only {
-        display: none;
+    body.print-report .page-shell > #report-view {
+        display: block !important;
+        width: 80mm !important;
+        margin: 0 !important;
+        padding: 3mm !important;
+    }
+
+    body.print-report #report-view > .section-heading,
+    body.print-report #report-view > .report-date-card {
+        display: none !important;
+    }
+
+    body.print-report #report-print-area {
+        display: block !important;
+        width: 74mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    body.print-report .report-print-header {
+        display: block !important;
+        margin-bottom: 3mm !important;
+        padding-bottom: 2mm !important;
+        border-bottom: 1px dashed #000 !important;
+        text-align: center !important;
+    }
+
+    body.print-report .report-print-header h2,
+    body.print-report .report-print-header p {
+        margin: 1mm 0 !important;
+    }
+
+    body.print-report .stats-grid,
+    body.print-report .payment-breakdown {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 1.5mm !important;
+        margin: 2mm 0 !important;
+    }
+
+    body.print-report .stat-card,
+    body.print-report .payment-box,
+    body.print-report .report-card {
+        display: block !important;
+        min-height: auto !important;
+        margin: 0 !important;
+        padding: 2mm !important;
+        border: 1px solid #000 !important;
+        border-radius: 0 !important;
+    }
+
+    body.print-report .report-card {
+        margin-top: 3mm !important;
+        break-inside: avoid !important;
+    }
+
+    body.print-report .stat-card span,
+    body.print-report .payment-box span {
+        margin: 0 0 1mm !important;
+        font-size: 7pt !important;
+    }
+
+    body.print-report .stat-card strong,
+    body.print-report .payment-box strong {
+        font-size: 9pt !important;
+    }
+
+    body.print-report .card-title-row p,
+    body.print-report .report-card > p {
+        display: none !important;
+    }
+
+    body.print-report .table-wrap {
+        display: block !important;
+        overflow: visible !important;
+    }
+
+    body.print-report .data-table {
+        display: table !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important;
+    }
+
+    body.print-report .data-table th,
+    body.print-report .data-table td {
+        padding: 1.2mm 0.4mm !important;
+        border: 1px solid #000 !important;
+        font-size: 6.4pt !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    body.print-report .report-card:last-child {
+        display: none !important;
     }
 }
