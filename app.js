@@ -36,7 +36,11 @@ const state = {
     invoices: [],
     db: null,
     firebase: null,
+    auth: null,
+    authApi: null,
     cloudReady: false,
+    currentUser: null,
+    unsubscribeInvoices: null,
     currentInvoice: null,
     reportInvoices: [],
     confirmResolver: null
@@ -174,6 +178,8 @@ function normalizeInvoice(invoice, index = 0) {
         createdAt: invoice.createdAt || date,
         updatedAt: invoice.updatedAt || date,
         deviceId: invoice.deviceId || 'legacy',
+        createdBy: String(invoice.createdBy || ''),
+        deleted: Boolean(invoice.deleted),
         pending: Boolean(invoice.pending)
     };
 }
@@ -249,7 +255,7 @@ function initializeForm() {
     $('sale-date').value = toDateTimeLocal();
     $('order-no').value = '';
     $('customer-name').value = '';
-    $('worker-name').value = '';
+    $('worker-name').value = state.currentUser?.name || '';
     $('item-name').value = '';
     $('item-price').value = '';
     $('item-qty').value = '1';
@@ -466,6 +472,7 @@ function buildInvoice() {
         createdAt: now,
         updatedAt: now,
         deviceId: getDeviceId(),
+        createdBy: state.currentUser?.uid || '',
         pending: true
     };
 }
@@ -508,13 +515,18 @@ async function clearCurrentInvoice() {
     if (approved) initializeForm();
 }
 
+function accessibleInvoices() {
+    if (!state.currentUser || state.currentUser.role === 'admin') return state.invoices;
+    return state.invoices.filter(invoice => invoice.createdBy === state.currentUser.uid);
+}
+
 function filteredInvoices() {
     const search = normalizeText($('history-search').value);
     const from = $('history-from').value;
     const to = $('history-to').value;
     const payment = $('history-payment').value;
 
-    return state.invoices.filter(invoice => {
+    return accessibleInvoices().filter(invoice => {
         const day = localDateKey(invoice.date);
         if (from && day < from) return false;
         if (to && day > to) return false;
@@ -568,7 +580,7 @@ function renderHistory() {
                 <div class="row-actions">
                     <button class="icon-action" type="button" data-invoice-action="view" data-id="${escapeHtml(invoice.id)}" title="عرض">👁</button>
                     <button class="icon-action" type="button" data-invoice-action="print" data-id="${escapeHtml(invoice.id)}" title="طباعة">🖨</button>
-                    <button class="icon-action delete" type="button" data-invoice-action="delete" data-id="${escapeHtml(invoice.id)}" title="حذف">🗑</button>
+                    ${state.currentUser?.role === 'admin' ? `<button class="icon-action delete" type="button" data-invoice-action="delete" data-id="${escapeHtml(invoice.id)}" title="حذف">🗑</button>` : ''}
                 </div>
             </td>
         </tr>
@@ -589,7 +601,7 @@ function renderHistory() {
             <div class="mobile-invoice-actions">
                 <button class="btn btn-light" type="button" data-invoice-action="view" data-id="${escapeHtml(invoice.id)}">عرض</button>
                 <button class="btn btn-light" type="button" data-invoice-action="print" data-id="${escapeHtml(invoice.id)}">طباعة</button>
-                <button class="btn btn-danger-ghost" type="button" data-invoice-action="delete" data-id="${escapeHtml(invoice.id)}">حذف</button>
+                ${state.currentUser?.role === 'admin' ? `<button class="btn btn-danger-ghost" type="button" data-invoice-action="delete" data-id="${escapeHtml(invoice.id)}">حذف</button>` : ''}
             </div>
         </div>
     `).join('');
@@ -709,7 +721,7 @@ function handleInvoiceAction(event) {
 
 function invoicesForReport() {
     const day = $('report-date').value || localDateKey();
-    return state.invoices.filter(invoice => localDateKey(invoice.date) === day);
+    return accessibleInvoices().filter(invoice => localDateKey(invoice.date) === day);
 }
 
 function renderReport() {
@@ -823,12 +835,13 @@ function switchView(viewId) {
 }
 
 async function pushInvoice(invoice) {
-    if (!state.cloudReady || !state.firebase || !state.db) return false;
+    if (!state.cloudReady || !state.firebase || !state.db || !state.currentUser) return false;
     try {
         const { doc, setDoc } = state.firebase;
-        const cloudInvoice = { ...invoice, pending: false, syncedAt: new Date().toISOString() };
+        const createdBy = invoice.createdBy || state.currentUser.uid;
+        const cloudInvoice = { ...invoice, createdBy, pending: false, syncedAt: new Date().toISOString() };
         await setDoc(doc(state.db, 'stores', STORE_ID, 'invoices', invoice.id), cloudInvoice, { merge: true });
-        state.invoices = state.invoices.map(item => item.id === invoice.id ? { ...item, pending: false } : item);
+        state.invoices = state.invoices.map(item => item.id === invoice.id ? { ...item, createdBy, pending: false } : item);
         persistInvoices();
         renderAllDataViews();
         setSyncStatus('is-online', 'متصل ومحفوظ سحابياً');
@@ -841,14 +854,18 @@ async function pushInvoice(invoice) {
 }
 
 async function syncPendingChanges() {
-    if (!state.cloudReady || !state.firebase || !state.db || !navigator.onLine) return;
-    const { doc, deleteDoc } = state.firebase;
+    if (!state.cloudReady || !state.firebase || !state.db || !state.currentUser || !navigator.onLine) return;
+    const { doc, updateDoc } = state.firebase;
     setSyncStatus('is-local', 'جارٍ مزامنة البيانات…');
 
     const deleted = new Set(safeJsonParse(localStorage.getItem(STORAGE_KEYS.deleted), []));
     for (const id of [...deleted]) {
         try {
-            await deleteDoc(doc(state.db, 'stores', STORE_ID, 'invoices', id));
+            await updateDoc(doc(state.db, 'stores', STORE_ID, 'invoices', id), {
+                deleted: true,
+                deletedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
             deleted.delete(id);
         } catch (error) {
             console.warn('Cloud delete failed:', error);
@@ -856,7 +873,10 @@ async function syncPendingChanges() {
     }
     localStorage.setItem(STORAGE_KEYS.deleted, JSON.stringify([...deleted]));
 
-    for (const invoice of state.invoices.filter(item => item.pending)) {
+    const pendingInvoices = state.invoices.filter(item => item.pending && (
+        state.currentUser.role === 'admin' || !item.createdBy || item.createdBy === state.currentUser.uid
+    ));
+    for (const invoice of pendingInvoices) {
         await pushInvoice(invoice);
     }
 
@@ -884,17 +904,121 @@ function mergeCloudInvoices(cloudInvoices, authoritative = false) {
     renderAllDataViews();
 }
 
-async function initializeFirebase() {
-    if (!navigator.onLine) {
-        setSyncStatus('is-offline', 'غير متصل - حفظ محلي');
+function showLogin(message = '') {
+    document.body.classList.add('auth-pending');
+    $('login-message').textContent = message;
+    $('login-btn').disabled = false;
+    $('login-btn').textContent = 'دخول آمن';
+}
+
+function showAuthenticatedApp(profile) {
+    state.currentUser = profile;
+    document.body.classList.remove('auth-pending');
+    $('login-message').textContent = '';
+    $('current-user-label').textContent = `${profile.name} — ${profile.role === 'admin' ? 'مدير' : 'كاشير'}`;
+
+    const workerSelect = $('worker-name');
+    if (![...workerSelect.options].some(option => option.value === profile.name)) {
+        const option = document.createElement('option');
+        option.value = profile.name;
+        option.textContent = profile.name;
+        workerSelect.appendChild(option);
+    }
+    workerSelect.value = profile.name;
+    workerSelect.disabled = profile.role !== 'admin';
+    renderAllDataViews();
+}
+
+function friendlyAuthError(error) {
+    const code = String(error?.code || '');
+    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) {
+        return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
+    }
+    if (code.includes('too-many-requests')) return 'محاولات كثيرة. انتظر قليلاً ثم حاول مرة أخرى.';
+    if (code.includes('network-request-failed')) return 'تعذر الاتصال بالإنترنت.';
+    if (code.includes('invalid-email')) return 'صيغة البريد الإلكتروني غير صحيحة.';
+    return 'تعذر تسجيل الدخول. تحقق من البيانات وحاول مجدداً.';
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+    if (!state.auth || !state.authApi) {
+        showLogin('انتظر اكتمال الاتصال بخدمة تسجيل الدخول.');
         return;
     }
 
+    const email = $('login-email').value.trim();
+    const password = $('login-password').value;
+    if (!email || !password) {
+        showLogin('أدخل البريد الإلكتروني وكلمة المرور.');
+        return;
+    }
+
+    $('login-btn').disabled = true;
+    $('login-btn').textContent = 'جارٍ التحقق…';
+    $('login-message').textContent = '';
+    try {
+        await state.authApi.signInWithEmailAndPassword(state.auth, email, password);
+        $('login-password').value = '';
+    } catch (error) {
+        showLogin(friendlyAuthError(error));
+    }
+}
+
+async function handleLogout() {
+    if (state.cart.length) {
+        const approved = await showConfirm('توجد فاتورة غير محفوظة. هل تريد تسجيل الخروج؟', 'تسجيل الخروج');
+        if (!approved) return;
+    }
+    if (state.auth && state.authApi) await state.authApi.signOut(state.auth);
+}
+
+async function loadUserProfile(user) {
+    const { doc, getDoc } = state.firebase;
+    const snapshot = await getDoc(doc(state.db, 'users', user.uid));
+    if (!snapshot.exists()) throw new Error('profile-not-found');
+    const data = snapshot.data();
+    if (data.active !== true) throw new Error('profile-disabled');
+    return {
+        uid: user.uid,
+        email: user.email || '',
+        name: String(data.name || user.email?.split('@')[0] || 'مستخدم'),
+        role: data.role === 'admin' ? 'admin' : 'cashier'
+    };
+}
+
+function startInvoicesListener() {
+    if (state.unsubscribeInvoices) state.unsubscribeInvoices();
+    const { collection, onSnapshot, query, where } = state.firebase;
+    const invoicesRef = collection(state.db, 'stores', STORE_ID, 'invoices');
+    const invoicesQuery = state.currentUser.role === 'admin'
+        ? invoicesRef
+        : query(invoicesRef, where('createdBy', '==', state.currentUser.uid));
+
+    state.unsubscribeInvoices = onSnapshot(invoicesQuery, snapshot => {
+        const cloudInvoices = snapshot.docs.map((snapshotDoc, index) => normalizeInvoice({
+            ...snapshotDoc.data(),
+            id: snapshotDoc.id
+        }, index)).filter(invoice => !invoice.deleted);
+        mergeCloudInvoices(cloudInvoices, !snapshot.metadata.fromCache);
+        setSyncStatus(
+            snapshot.metadata.fromCache ? 'is-local' : 'is-online',
+            snapshot.metadata.fromCache ? 'بيانات محفوظة محلياً' : 'متصل ومزامَن'
+        );
+        syncPendingChanges();
+    }, error => {
+        console.warn('Cloud listener failed:', error);
+        setSyncStatus('is-error', 'تعذر قراءة البيانات السحابية');
+    });
+}
+
+async function initializeFirebase() {
     setSyncStatus('is-local', 'جارٍ الاتصال بالسحابة…');
     try {
-        const [appModule, firestoreModule] = await Promise.all([
+        const [appModule, firestoreModule, authModule] = await Promise.all([
             import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
-            import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
+            import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'),
+            import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')
         ]);
 
         const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(FIREBASE_CONFIG);
@@ -911,31 +1035,53 @@ async function initializeFirebase() {
 
         state.db = db;
         state.firebase = firestoreModule;
-        state.cloudReady = true;
+        state.authApi = authModule;
+        state.auth = authModule.getAuth(app);
+        await authModule.setPersistence(state.auth, authModule.browserLocalPersistence);
 
-        const invoicesRef = firestoreModule.collection(db, 'stores', STORE_ID, 'invoices');
-        firestoreModule.onSnapshot(invoicesRef, snapshot => {
-            const cloudInvoices = snapshot.docs.map((snapshotDoc, index) => normalizeInvoice({
-                ...snapshotDoc.data(),
-                id: snapshotDoc.id
-            }, index));
-            mergeCloudInvoices(cloudInvoices, !snapshot.metadata.fromCache);
-            setSyncStatus(snapshot.metadata.fromCache ? 'is-local' : 'is-online', snapshot.metadata.fromCache ? 'بيانات محفوظة محلياً' : 'متصل ومزامَن');
-            syncPendingChanges();
-        }, error => {
-            console.warn('Cloud listener failed:', error);
-            setSyncStatus('is-error', 'الحفظ المحلي يعمل');
+        authModule.onAuthStateChanged(state.auth, async user => {
+            if (!user) {
+                state.cloudReady = false;
+                state.currentUser = null;
+                if (state.unsubscribeInvoices) state.unsubscribeInvoices();
+                state.unsubscribeInvoices = null;
+                showLogin();
+                return;
+            }
+
+            try {
+                const profile = await loadUserProfile(user);
+                state.cloudReady = true;
+                showAuthenticatedApp(profile);
+                startInvoicesListener();
+                await syncPendingChanges();
+            } catch (error) {
+                console.warn('User profile unavailable:', error);
+                await authModule.signOut(state.auth);
+                const message = error.message === 'profile-disabled'
+                    ? 'هذا الحساب موقوف. تواصل مع المدير.'
+                    : 'لا يوجد ملف مستخدم صالح لهذا الحساب.';
+                showLogin(message);
+            }
         });
-
-        await syncPendingChanges();
     } catch (error) {
         console.warn('Firebase unavailable:', error);
         state.cloudReady = false;
-        setSyncStatus(navigator.onLine ? 'is-error' : 'is-offline', navigator.onLine ? 'الحفظ المحلي يعمل' : 'غير متصل - حفظ محلي');
+        setSyncStatus(navigator.onLine ? 'is-error' : 'is-offline', navigator.onLine ? 'تعذر تحميل خدمة الدخول' : 'لا يوجد اتصال بالإنترنت');
+        showLogin(navigator.onLine ? 'تعذر تحميل خدمة تسجيل الدخول. أعد فتح الصفحة.' : 'يلزم الاتصال بالإنترنت عند تسجيل الدخول لأول مرة.');
     }
 }
 
 function bindEvents() {
+    $('login-form').addEventListener('submit', handleLogin);
+    $('toggle-password').addEventListener('click', () => {
+        const password = $('login-password');
+        const showing = password.type === 'text';
+        password.type = showing ? 'password' : 'text';
+        $('toggle-password').textContent = showing ? 'إظهار' : 'إخفاء';
+    });
+    $('logout-btn').addEventListener('click', handleLogout);
+
     document.querySelectorAll('.nav-btn').forEach(button => {
         button.addEventListener('click', () => switchView(button.dataset.view));
     });
@@ -993,7 +1139,7 @@ function bindEvents() {
 
     window.addEventListener('online', () => {
         if (state.cloudReady) syncPendingChanges();
-        else initializeFirebase();
+        else if (!state.auth) initializeFirebase();
     });
     window.addEventListener('offline', () => setSyncStatus('is-offline', 'غير متصل - حفظ محلي'));
     window.addEventListener('afterprint', () => {

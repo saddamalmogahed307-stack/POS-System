@@ -8,7 +8,35 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="print.css" media="print">
 </head>
-<body>
+<body class="auth-pending">
+    <section id="login-view" class="login-view" aria-labelledby="login-title">
+        <div class="login-card">
+            <div class="login-brand">
+                <div class="brand-mark" aria-hidden="true">ت</div>
+                <div>
+                    <h1>تخفيضات السعر الأنسب</h1>
+                    <p>دخول نظام نقطة البيع</p>
+                </div>
+            </div>
+            <form id="login-form" class="login-form">
+                <label>
+                    <span>البريد الإلكتروني</span>
+                    <input id="login-email" type="email" autocomplete="username" placeholder="أدخل بريد الحساب" required>
+                </label>
+                <label>
+                    <span>كلمة المرور</span>
+                    <div class="password-field">
+                        <input id="login-password" type="password" autocomplete="current-password" placeholder="أدخل كلمة المرور" required>
+                        <button id="toggle-password" type="button" aria-label="إظهار كلمة المرور">إظهار</button>
+                    </div>
+                </label>
+                <p id="login-message" class="login-message" role="alert"></p>
+                <button id="login-btn" class="btn btn-primary" type="submit">دخول آمن</button>
+            </form>
+            <p class="login-note">استخدم أحد الحسابات المسجلة في Firebase. لا ترسل كلمة المرور لأي شخص.</p>
+        </div>
+    </section>
+
     <header class="app-header">
         <div class="brand-block">
             <div class="brand-mark" aria-hidden="true">ت</div>
@@ -17,9 +45,13 @@
                 <p>نظام نقطة البيع والفواتير</p>
             </div>
         </div>
-        <div id="sync-status" class="sync-status is-local" role="status">
-            <span class="status-dot"></span>
-            <span class="status-text">جارٍ الاتصال…</span>
+        <div class="header-actions">
+            <div id="sync-status" class="sync-status is-local" role="status">
+                <span class="status-dot"></span>
+                <span class="status-text">جارٍ الاتصال…</span>
+            </div>
+            <span id="current-user-label" class="current-user-label"></span>
+            <button id="logout-btn" class="logout-btn" type="button">خروج</button>
         </div>
     </header>
 

@@ -57,6 +57,121 @@ a {
     display: none;
 }
 
+.auth-pending > .app-header,
+.auth-pending > .main-nav,
+.auth-pending > .page-shell,
+.auth-pending > .app-footer {
+    display: none;
+}
+
+.login-view {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(201, 148, 22, 0.2), transparent 28%),
+        linear-gradient(145deg, #10213a, #23476f);
+}
+
+body:not(.auth-pending) .login-view {
+    display: none;
+}
+
+.login-card {
+    width: min(440px, 100%);
+    padding: 28px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.3);
+}
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 25px;
+}
+
+.login-brand h1 {
+    margin: 0 0 5px;
+    color: var(--navy);
+    font-size: 22px;
+}
+
+.login-brand p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.login-form {
+    display: grid;
+    gap: 15px;
+}
+
+.login-form label > span {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.login-form input {
+    width: 100%;
+    min-height: 50px;
+    padding: 11px 13px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #f9fbfd;
+    color: var(--ink);
+    direction: ltr;
+    text-align: left;
+}
+
+.login-form input:focus {
+    outline: 3px solid rgba(36, 93, 168, 0.12);
+    border-color: var(--blue);
+}
+
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-left: 68px;
+}
+
+.password-field button {
+    position: absolute;
+    left: 7px;
+    top: 7px;
+    bottom: 7px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 8px;
+    background: #e9eef5;
+    color: var(--navy);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.login-message {
+    min-height: 18px;
+    margin: -3px 0 0;
+    color: var(--red);
+    font-size: 12px;
+}
+
+.login-note {
+    margin: 18px 0 0;
+    color: var(--muted);
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.7;
+}
+
 .app-header {
     position: sticky;
     top: 0;
@@ -111,6 +226,32 @@ a {
     background: rgba(255, 255, 255, 0.12);
     font-size: 12px;
     white-space: nowrap;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.current-user-label {
+    max-width: 130px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.logout-btn {
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
 }
 
 .status-dot {
@@ -961,6 +1102,19 @@ input[readonly] {
 
     .sync-status {
         padding: 7px 9px;
+    }
+
+    .header-actions {
+        gap: 5px;
+    }
+
+    .current-user-label {
+        display: none;
+    }
+
+    .logout-btn {
+        padding: 6px 8px;
+        font-size: 10px;
     }
 
     .sync-status .status-text {
