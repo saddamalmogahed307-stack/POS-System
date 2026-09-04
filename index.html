@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام نقاط البيع - تخفيضات السعر الأنسب</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="print.css" media="print">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛒 نظام نقاط البيع</h1>
+            <p>نظام تخفيضات السعر الأنسب</p>
+        </header>
+
+        <div class="main-content">
+            <div class="products-section">
+                <h2>المنتجات</h2>
+                <div id="products-container"></div>
+            </div>
+
+            <div class="cart-section">
+                <h2>🛒 السلة</h2>
+                <div id="cart-items"></div>
+                <div id="cart-summary"></div>
+                <div class="action-buttons">
+                    <button class="action-btn complete-btn" onclick="completeTransaction()">
+                        ✅ إكمال العملية
+                    </button>
+                    <button class="action-btn clear-btn" onclick="clearCart()">
+                        🗑️ تفريغ السلة
+                    </button>
+                    <button class="action-btn history-btn" onclick="showInvoices()">
+                        📋 الفواتير السابقة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="invoices-modal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeInvoices()">&times;</span>
+            <h2>الفواتير المحفوظة</h2>
+            <div id="invoices-list"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
