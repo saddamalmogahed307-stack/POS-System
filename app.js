@@ -1158,4 +1158,8 @@ function initializeApp() {
     initializeFirebase();
 }
 
-document.addEventListener('DOMContentLoaded', initializeApp);
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp, { once: true });
+} else {
+    initializeApp();
+}
